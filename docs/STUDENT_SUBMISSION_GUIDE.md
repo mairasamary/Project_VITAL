@@ -220,7 +220,7 @@ changes
 
 Project VITAL assignments are team-based, but every team member is expected to make **meaningful contributions**.
 
-Whenever practical, students should commit their own work using their own GitHub accounts.
+Students should commit their own work using their own GitHub accounts.
 
 The goal is **not** to maximize the number of commits.
 
@@ -245,6 +245,8 @@ The instructor may consider:
 when evaluating individual participation.
 
 Do not artificially divide work simply to increase commit counts.
+
+You will use AI, the instructor will also use AI. The instructor will use AI to make sure your commit is inside the window of the assignment, and if your contribution is meaningful (no deletions, followed by additions - these kinds of things AI can spot really easily), cosmetic changes, wash-up commits (AI and the instructor will evaluate everything!
 
 ---
 
@@ -519,7 +521,7 @@ During the first Project VITAL assignments, your team may work primarily on:
 main
 ```
 
-As the course progresses, you may be asked to use branches.
+As the course progresses, you will be asked to use branches.
 
 For example:
 
