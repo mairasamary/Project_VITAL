@@ -46,14 +46,14 @@ Unless your instructor provides a different naming convention, name it:
 VITAL-Team-XX
 ```
 
-where `XX` is your assigned team number.
+where `XX` is your assigned team name.
 
 Examples:
 
 ```text
-VITAL-Team-01
-VITAL-Team-02
-VITAL-Team-07
+VITAL-Team-Eagles
+VITAL-Team-Q&A
+VITAL-Team-TestingEagles
 ```
 
 ## Repository visibility
