@@ -197,6 +197,26 @@ git pull
 git switch -c semester/2026-fall
 ```
 
+Immediately push the new semester branch to GitHub:
+
+```bash
+git push -u origin semester/2026-fall
+```
+
+This step is important. A branch created with `git switch -c` initially exists **only in your local repository**. A separate validation clone will not be able to see or switch to that branch until it has been pushed to the remote repository.
+
+Verify that the branch exists remotely:
+
+```bash
+git branch -a
+```
+
+You should see an entry similar to:
+
+```text
+remotes/origin/semester/2026-fall
+```
+
 For another semester:
 
 ```text
@@ -315,18 +335,62 @@ Only do this when you intentionally want a clean test environment.
 
 Ideally, test from a fresh clone in a separate directory.
 
-For example:
+**Before creating the validation clone, confirm that the semester branch has been pushed to GitHub.** From your main working copy, you can verify this with:
+
+```bash
+git branch -a
+```
+
+Look for:
+
+```text
+remotes/origin/semester/2026-fall
+```
+
+If the remote branch is missing, push it first:
+
+```bash
+git push -u origin semester/2026-fall
+```
+
+Then create the clean validation clone:
 
 ```bash
 cd ~/Desktop
 git clone https://github.com/mairasamary/Project_VITAL.git Project_VITAL_TEST
-cd Project_VITAL_TEST/environment
+cd Project_VITAL_TEST
 ```
 
-If validating a semester branch before it is merged, clone and switch to that branch:
+If validating a semester branch before it is merged, fetch the remote branches and switch to the semester branch **before entering the `environment` directory**:
 
 ```bash
+git fetch origin
 git switch semester/2026-fall
+```
+
+If Git does not automatically create the local tracking branch, use:
+
+```bash
+git switch --track origin/semester/2026-fall
+```
+
+Verify that you are on the correct branch:
+
+```bash
+git branch
+```
+
+You should see:
+
+```text
+  main
+* semester/2026-fall
+```
+
+Now enter the environment directory:
+
+```bash
+cd environment
 ```
 
 Create the local configuration:
@@ -1108,6 +1172,9 @@ git pull
 
 # 2. Create semester preparation branch
 git switch -c semester/2026-fall
+
+# Push it immediately so a clean validation clone can access it
+git push -u origin semester/2026-fall
 
 # 3. Review
 # environment/VERSION.md
