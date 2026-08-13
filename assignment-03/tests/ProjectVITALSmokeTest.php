@@ -26,7 +26,7 @@ final class ProjectVITALSmokeTest extends TestCase
 
     public function testPhpUnitRunsProjectVitalTests(): void
     {
-        /*self::assertSame(4, 2 + 2);*/
-        self::assertSame(5, 2 + 2);
+        self::assertSame(4, 2 + 2);
+        /*self::assertSame(5, 2 + 2);*/
     }
 }
