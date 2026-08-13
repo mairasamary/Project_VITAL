@@ -1,0 +1,63 @@
+services:
+  mysql:
+    image: mariadb:11.8.8
+    container_name: vital-openemr-db
+    restart: unless-stopped
+    command: ["mariadbd", "--character-set-server=utf8mb4"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - databasevolume:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD
+        - /usr/local/bin/healthcheck.sh
+        - --su-mysql
+        - --connect
+        - --innodb_initialized
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
+  openemr:
+    image: openemr/openemr:8.2.0
+    container_name: vital-openemr-app
+    restart: unless-stopped
+    ports:
+      - "${OPENEMR_HTTP_PORT}:80"
+      - "${OPENEMR_HTTPS_PORT}:443"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASS: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${OPENEMR_DB_USER}
+      MYSQL_PASS: ${OPENEMR_DB_PASSWORD}
+      OE_USER: ${OPENEMR_ADMIN_USER}
+      OE_PASS: ${OPENEMR_ADMIN_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - logvolume:/var/log
+      - sitevolume:/var/www/localhost/htdocs/openemr/sites
+    healthcheck:
+      test:
+        - CMD
+        - /usr/bin/curl
+        - --fail
+        - --insecure
+        - --location
+        - --show-error
+        - --silent
+        - https://localhost/meta/health/readyz
+      start_period: 3m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
+volumes:
+  logvolume: {}
+  sitevolume: {}
+  databasevolume: {}
