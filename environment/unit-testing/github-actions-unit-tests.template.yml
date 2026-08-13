@@ -1,0 +1,72 @@
+name: Project VITAL Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'experiment/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: PHP 8.2 — Project VITAL Unit Tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out team repository
+        uses: actions/checkout@v7
+
+      - name: Check out pinned OpenEMR source
+        uses: actions/checkout@v7
+        with:
+          repository: openemr/openemr
+          ref: v8_2_0
+          path: openemr-source
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/composer/files
+          key: ${{ runner.os }}-composer-openemr-v8_2_0-${{ hashFiles('openemr-source/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-openemr-v8_2_0-
+
+      - name: Install OpenEMR dependencies
+        working-directory: openemr-source
+        run: composer install --prefer-dist --no-progress
+
+      - name: Copy Project VITAL tests into OpenEMR isolated suite
+        run: |
+          mkdir -p openemr-source/tests/Tests/Isolated/ProjectVITAL
+          cp assignment-03/tests/*Test.php \
+             openemr-source/tests/Tests/Isolated/ProjectVITAL/
+
+      - name: Run Project VITAL unit tests
+        working-directory: openemr-source
+        run: |
+          vendor/bin/phpunit \
+            -c phpunit-isolated.xml \
+            tests/Tests/Isolated/ProjectVITAL \
+            --log-junit=../junit.xml \
+            --coverage-clover=../clover.xml
+
+      - name: Upload test and coverage artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: project-vital-unit-test-results
+          path: |
+            junit.xml
+            clover.xml
