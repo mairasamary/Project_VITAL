@@ -43,7 +43,7 @@ Plan for approximately **2–3 hours of team work outside class**, in addition t
 
 ## Before You Begin
 
-Your Project VITAL environment must be running and you must be able to log in to OpenEMR.
+Your Project VITAL environment must be running, and you must be able to log in to OpenEMR.
 
 Complete the **Project VITAL Student Setup Guide** before beginning this assignment.
 
@@ -72,7 +72,7 @@ The assignment intentionally tells you **what outcome to achieve**, but it does 
 | # | Task | What to Do |
 |---|---|---|
 | 1 | **Explore the interface** | Identify at least five major functional areas of OpenEMR. Record what you believe each area is used for. |
-| 2 | **Create a synthetic patient** | Create a fictional patient with demographic and contact information. Use invented data only. |
+| 2 | **Create at least 3 synthetic patient** | Create fictional patients with demographic and contact information. Use invented data only. |
 | 3 | **Find the patient** | Locate your patient using at least two different search criteria or approaches. |
 | 4 | **Edit patient information** | Change at least one demographic field. Navigate away, return, and verify whether the change persisted. |
 | 5 | **Schedule an appointment** | Schedule an appointment for the patient with a provider. |
