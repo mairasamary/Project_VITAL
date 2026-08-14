@@ -34,8 +34,8 @@ jobs:
         run: |
           python environment/data-testing/generate_data.py \
             --size small \
-            --patients 100 \
-            --seed 515151 \
+            --patients 200 \
+            --seed 42 \
             --output .project-vital/privacy-testing/ci-source
 
       - name: Create privacy-preserving research export
@@ -64,8 +64,7 @@ jobs:
 
       - name: Prove direct-identifier leakage is rejected
         run: |
-          cp -R \
-            .project-vital/privacy-testing/ci-export \
+          cp -R .project-vital/privacy-testing/ci-export \
             .project-vital/privacy-testing/ci-leaked
 
           python environment/privacy-testing/privacy_corrupt.py \
@@ -89,8 +88,7 @@ jobs:
 
       - name: Prove broken pseudonymous relationships are rejected
         run: |
-          cp -R \
-            .project-vital/privacy-testing/ci-export \
+          cp -R .project-vital/privacy-testing/ci-export \
             .project-vital/privacy-testing/ci-broken
 
           python environment/privacy-testing/privacy_corrupt.py \

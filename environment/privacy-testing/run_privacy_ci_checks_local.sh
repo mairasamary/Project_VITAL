@@ -13,8 +13,8 @@ mkdir -p "${BASE}"
 echo "== 1. Generate deterministic synthetic source =="
 python3 "${ROOT}/environment/data-testing/generate_data.py" \
   --size small \
-  --patients 100 \
-  --seed 515151 \
+  --patients 200 \
+  --seed 42 \
   --output "${SRC}"
 
 echo
@@ -43,47 +43,35 @@ python3 "${ROOT}/environment/privacy-testing/utility_report.py" \
 echo
 echo "== 5. Prove direct-identifier leakage is rejected =="
 cp -R "${OUT}" "${BASE}/leaked"
-
 python3 "${ROOT}/environment/privacy-testing/privacy_corrupt.py" \
-  "${BASE}/leaked" \
-  --defect leak-email
+  "${BASE}/leaked" --defect leak-email
 
 set +e
 python3 "${ROOT}/environment/privacy-testing/validate_privacy_export_v2.py" \
-  "${BASE}/leaked" \
-  --qi age_band geography \
-  --min-k 3
+  "${BASE}/leaked" --qi age_band geography --min-k 3
 LEAK_RC=$?
 set -e
-
 if [ "${LEAK_RC}" -eq 0 ]; then
   echo "ERROR: privacy validator unexpectedly accepted leaked data."
   exit 1
 fi
-
 echo "Direct identifier leakage correctly rejected."
 
 echo
 echo "== 6. Prove broken pseudonymous relationship is rejected =="
 cp -R "${OUT}" "${BASE}/broken"
-
 python3 "${ROOT}/environment/privacy-testing/privacy_corrupt.py" \
-  "${BASE}/broken" \
-  --defect break-encounter-subject
+  "${BASE}/broken" --defect break-encounter-subject
 
 set +e
 python3 "${ROOT}/environment/privacy-testing/validate_privacy_export_v2.py" \
-  "${BASE}/broken" \
-  --qi age_band geography \
-  --min-k 3
+  "${BASE}/broken" --qi age_band geography --min-k 3
 REL_RC=$?
 set -e
-
 if [ "${REL_RC}" -eq 0 ]; then
   echo "ERROR: privacy validator unexpectedly accepted broken relationship."
   exit 1
 fi
-
 echo "Broken pseudonymous relationship correctly rejected."
 
 echo
