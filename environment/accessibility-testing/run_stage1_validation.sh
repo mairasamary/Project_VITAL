@@ -3,23 +3,31 @@ set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
 DIR="${ROOT}/environment/accessibility-testing"
+IMAGE="mcr.microsoft.com/playwright:v1.62.0-noble"
 
-echo "== 1. Verify Node/npm =="
-node --version
-npm --version
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is not running."
+  exit 1
+fi
 
-echo
-echo "== 2. Install pinned accessibility-test dependencies =="
-cd "${DIR}"
-npm install
-
-echo
-echo "== 3. Install Chromium for Playwright =="
-npx playwright install chromium
+echo "== 1. Pull pinned Playwright image =="
+docker pull "${IMAGE}"
 
 echo
-echo "== 4. Validate accessible and deliberately broken fixtures =="
-npx playwright test tests/fixture-accessibility.spec.js
+echo "== 2. Install project dependencies inside container =="
+docker run --rm --ipc=host \
+  -v "${ROOT}:/work" \
+  -w /work/environment/accessibility-testing \
+  "${IMAGE}" \
+  /bin/bash -lc "npm install"
+
+echo
+echo "== 3. Validate accessible and deliberately broken fixtures =="
+docker run --rm --ipc=host \
+  -v "${ROOT}:/work" \
+  -w /work/environment/accessibility-testing \
+  "${IMAGE}" \
+  /bin/bash -lc "npx playwright test tests/fixture-accessibility.spec.js"
 
 echo
 echo "STAGE 1 ACCESSIBILITY TOOLCHAIN VALIDATION PASSED"
