@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Accessible Patient Search Fixture</title>
+  <style>
+    body { font-family: sans-serif; max-width: 48rem; margin: 2rem auto; line-height: 1.5; }
+    :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Patient Search</h1>
+  </header>
+  <main>
+    <form>
+      <div>
+        <label for="family-name">Family name</label>
+        <input id="family-name" name="family-name" autocomplete="family-name">
+      </div>
+      <div>
+        <label for="dob">Date of birth</label>
+        <input id="dob" name="dob" type="date">
+      </div>
+      <button type="submit">Search patients</button>
+    </form>
+
+    <section aria-labelledby="help-heading">
+      <h2 id="help-heading">Help</h2>
+      <p>Enter one or more search fields.</p>
+      <img
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='30'%3E%3Crect width='100' height='30' fill='white'/%3E%3C/svg%3E"
+        alt="Project VITAL teaching placeholder">
+    </section>
+  </main>
+</body>
+</html>

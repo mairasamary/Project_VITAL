@@ -1,0 +1,16 @@
+{
+  "name": "project-vital-accessibility-testing",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Project VITAL accessibility testing infrastructure",
+  "scripts": {
+    "test": "playwright test",
+    "test:fixtures": "playwright test tests/fixture-accessibility.spec.js",
+    "test:openemr": "playwright test tests/openemr-login.spec.js",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@playwright/test": "1.60.0"
+  }
+}
