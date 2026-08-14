@@ -1,0 +1,113 @@
+name: Project VITAL Privacy Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'experiment/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  privacy-tests:
+    name: Continuous Privacy Validation
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Show Python version
+        run: python --version
+
+      - name: Generate deterministic synthetic source
+        run: |
+          python environment/data-testing/generate_data.py \
+            --size small \
+            --patients 100 \
+            --seed 515151 \
+            --output .project-vital/privacy-testing/ci-source
+
+      - name: Create privacy-preserving research export
+        run: |
+          python environment/privacy-testing/privacy_transform.py \
+            .project-vital/privacy-testing/ci-source \
+            --output .project-vital/privacy-testing/ci-export \
+            --secret "CI-TEACHING-SECRET-ONLY" \
+            --age-band 20 \
+            --geo state \
+            --time year \
+            --suppress-sex
+
+      - name: Validate privacy export
+        run: |
+          python environment/privacy-testing/validate_privacy_export_v2.py \
+            .project-vital/privacy-testing/ci-export \
+            --qi age_band geography \
+            --min-k 3
+
+      - name: Verify utility preservation
+        run: |
+          python environment/privacy-testing/utility_report.py \
+            .project-vital/privacy-testing/ci-source \
+            .project-vital/privacy-testing/ci-export
+
+      - name: Prove direct-identifier leakage is rejected
+        run: |
+          cp -R \
+            .project-vital/privacy-testing/ci-export \
+            .project-vital/privacy-testing/ci-leaked
+
+          python environment/privacy-testing/privacy_corrupt.py \
+            .project-vital/privacy-testing/ci-leaked \
+            --defect leak-email
+
+          set +e
+          python environment/privacy-testing/validate_privacy_export_v2.py \
+            .project-vital/privacy-testing/ci-leaked \
+            --qi age_band geography \
+            --min-k 3
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: privacy validator unexpectedly accepted leaked email data"
+            exit 1
+          fi
+
+          echo "Privacy validator correctly rejected direct-identifier leakage."
+
+      - name: Prove broken pseudonymous relationships are rejected
+        run: |
+          cp -R \
+            .project-vital/privacy-testing/ci-export \
+            .project-vital/privacy-testing/ci-broken
+
+          python environment/privacy-testing/privacy_corrupt.py \
+            .project-vital/privacy-testing/ci-broken \
+            --defect break-encounter-subject
+
+          set +e
+          python environment/privacy-testing/validate_privacy_export_v2.py \
+            .project-vital/privacy-testing/ci-broken \
+            --qi age_band geography \
+            --min-k 3
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: privacy validator unexpectedly accepted a broken relationship"
+            exit 1
+          fi
+
+          echo "Privacy validator correctly rejected broken pseudonymous relationships."
