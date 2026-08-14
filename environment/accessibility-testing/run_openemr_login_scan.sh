@@ -23,7 +23,8 @@ set +a
 PORT="${OPENEMR_HTTPS_PORT:-9301}"
 
 # From the Playwright container, hostmachine maps to the host running Docker.
-export OPENEMR_BASE_URL="https://hostmachine:${PORT}"
+#export OPENEMR_BASE_URL="https://hostmachine:${PORT}"
+export OPENEMR_BASE_URL="https://host.docker.internal:${PORT}"
 
 echo "Scanning OpenEMR login page at:"
 echo "  ${OPENEMR_BASE_URL}"
