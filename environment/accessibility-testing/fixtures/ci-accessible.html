@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Project VITAL Accessible Search</title>
+  <style>
+    body { font-family: sans-serif; max-width: 44rem; margin: 2rem auto; line-height: 1.5; }
+    label { display: block; margin-top: 1rem; }
+    input, button { font: inherit; padding: .5rem; }
+    :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Patient Search</h1>
+    <form>
+      <label for="family-name">Family name</label>
+      <input id="family-name" name="family-name" autocomplete="family-name">
+
+      <label for="dob">Date of birth</label>
+      <input id="dob" name="dob" type="date">
+
+      <button type="submit">Search patients</button>
+    </form>
+  </main>
+</body>
+</html>
