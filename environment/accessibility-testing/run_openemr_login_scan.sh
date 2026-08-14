@@ -31,7 +31,7 @@ echo "  ${OPENEMR_BASE_URL}"
 echo
 
 docker run --rm --ipc=host \
-  --add-host=hostmachine:host-gateway \
+#  --add-host=hostmachine:host-gateway \
   -e OPENEMR_BASE_URL="${OPENEMR_BASE_URL}" \
   -v "${ROOT}:/work" \
   -w /work/environment/accessibility-testing \
