@@ -1,0 +1,96 @@
+name: Project VITAL Data Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'experiment/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  data-tests:
+    name: Synthetic Data Validation
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Show Python version
+        run: python --version
+
+      - name: Run generator unit tests
+        run: python environment/data-testing/test_generator.py
+
+      - name: Generate deterministic CI dataset
+        run: |
+          python environment/data-testing/generate_data.py \
+            --size small \
+            --patients 25 \
+            --seed 424242 \
+            --output .project-vital/data-testing/ci-sample
+
+      - name: Validate deterministic CI dataset
+        run: |
+          python environment/data-testing/validate_data.py \
+            .project-vital/data-testing/ci-sample
+
+      - name: Verify reproducibility
+        run: |
+          python environment/data-testing/generate_data.py \
+            --size small \
+            --patients 25 \
+            --seed 424242 \
+            --output .project-vital/data-testing/ci-repro-a
+
+          python environment/data-testing/generate_data.py \
+            --size small \
+            --patients 25 \
+            --seed 424242 \
+            --output .project-vital/data-testing/ci-repro-b
+
+          diff -q \
+            .project-vital/data-testing/ci-repro-a/patients.csv \
+            .project-vital/data-testing/ci-repro-b/patients.csv
+
+          diff -q \
+            .project-vital/data-testing/ci-repro-a/encounters.csv \
+            .project-vital/data-testing/ci-repro-b/encounters.csv
+
+          diff -q \
+            .project-vital/data-testing/ci-repro-a/vitals.csv \
+            .project-vital/data-testing/ci-repro-b/vitals.csv
+
+      - name: Prove validator rejects bad data
+        run: |
+          cp -R \
+            .project-vital/data-testing/ci-sample \
+            .project-vital/data-testing/ci-broken
+
+          python environment/data-testing/corrupt_data.py \
+            .project-vital/data-testing/ci-broken \
+            --defect orphan-vitals
+
+          set +e
+          python environment/data-testing/validate_data.py \
+            .project-vital/data-testing/ci-broken
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: validator unexpectedly accepted corrupted data"
+            exit 1
+          fi
+
+          echo "Validator correctly rejected corrupted data."
