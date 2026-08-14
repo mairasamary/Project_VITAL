@@ -54,7 +54,7 @@ jobs:
           python environment/privacy-testing/validate_privacy_export_v2.py \
             .project-vital/privacy-testing/ci-export \
             --qi age_band geography \
-            --min-k 3
+            --min-k 10
 
       - name: Verify utility preservation
         run: |
