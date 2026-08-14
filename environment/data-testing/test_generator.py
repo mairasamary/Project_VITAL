@@ -35,8 +35,7 @@ class GeneratorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/"data"; self.generate(p,42,30)
             r=subprocess.run([sys.executable,str(VAL),str(p)], capture_output=True, text=True)
-            #self.assertEqual(0,r.returncode,r.stdout+r.stderr)
-            self.assertEqual(8,9)
+            self.assertEqual(0,r.returncode,r.stdout+r.stderr)
 
 if __name__=="__main__":
     unittest.main()
