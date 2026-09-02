@@ -4,7 +4,7 @@ import argparse
 
 class Handler(BaseHTTPRequestHandler):
     def security_headers(self):
-        self.send_header("X-Content-Type-Options", "nosniff")
+#         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Security-Policy", "default-src 'self'")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Frame-Options", "DENY")
