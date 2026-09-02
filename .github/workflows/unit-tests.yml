@@ -10,6 +10,7 @@ on:
       - 'assignment-03/**'
       - 'environment/unit-testing/**'
       - '.github/workflows/unit-tests.yml'
+
   pull_request:
     branches:
       - main
@@ -30,7 +31,21 @@ jobs:
       - name: Check out team repository
         uses: actions/checkout@v7
 
+      - name: Check for Project VITAL unit tests
+        id: project-vital-tests
+        shell: bash
+        run: |
+          if compgen -G "assignment-03/tests/*Test.php" > /dev/null; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "Project VITAL unit tests found."
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No assignment-03/tests/*Test.php files found."
+            echo "Skipping the student unit-test suite in the Project VITAL master repository."
+          fi
+
       - name: Check out pinned OpenEMR source
+        if: steps.project-vital-tests.outputs.found == 'true'
         uses: actions/checkout@v7
         with:
           repository: openemr/openemr
@@ -38,12 +53,14 @@ jobs:
           path: openemr-source
 
       - name: Set up PHP 8.2
+        if: steps.project-vital-tests.outputs.found == 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           coverage: xdebug
 
       - name: Cache Composer downloads
+        if: steps.project-vital-tests.outputs.found == 'true'
         uses: actions/cache@v5
         with:
           path: ~/.cache/composer/files
@@ -52,16 +69,19 @@ jobs:
             ${{ runner.os }}-composer-openemr-v8_2_0-
 
       - name: Install OpenEMR dependencies
+        if: steps.project-vital-tests.outputs.found == 'true'
         working-directory: openemr-source
         run: composer install --prefer-dist --no-progress
 
       - name: Copy Project VITAL tests into OpenEMR isolated suite
+        if: steps.project-vital-tests.outputs.found == 'true'
         run: |
           mkdir -p openemr-source/tests/Tests/Isolated/ProjectVITAL
           cp assignment-03/tests/*Test.php \
              openemr-source/tests/Tests/Isolated/ProjectVITAL/
 
       - name: Run Project VITAL unit tests
+        if: steps.project-vital-tests.outputs.found == 'true'
         working-directory: openemr-source
         run: |
           vendor/bin/phpunit \
@@ -71,7 +91,7 @@ jobs:
             --coverage-clover=../clover.xml
 
       - name: Upload test and coverage artifacts
-        if: ${{ !cancelled() }}
+        if: steps.project-vital-tests.outputs.found == 'true' && !cancelled()
         uses: actions/upload-artifact@v7
         with:
           name: project-vital-unit-test-results
