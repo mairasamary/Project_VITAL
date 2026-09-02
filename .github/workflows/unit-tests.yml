@@ -6,9 +6,17 @@ on:
       - main
       - 'feature/**'
       - 'experiment/**'
+    paths:
+      - 'assignment-03/**'
+      - 'environment/unit-testing/**'
+      - '.github/workflows/unit-tests.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'assignment-03/**'
+      - 'environment/unit-testing/**'
+      - '.github/workflows/unit-tests.yml'
 
 permissions:
   contents: read
