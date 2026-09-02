@@ -1,2 +1,6 @@
 .project-vital/
 .DS_Store
+
+# Python generated files
+__pycache__/
+*.py[cod]
