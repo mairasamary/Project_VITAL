@@ -4,18 +4,67 @@
 
 ## Purpose
 
-In Assignment 1, you learned what OpenEMR does. In Assignment 2, you investigated how a selected workflow is implemented. In Assignment 3, you will test at the smallest practical scope: an individual function, class, or small component, and configure Continuous Integration (CI) so tests run automatically when code changes.
+In Assignment 1, you investigated **what OpenEMR does**. In Assignment 2, your team investigated **how one OpenEMR workflow works** through user-visible behavior, HTTP requests, source code, components, dependencies, and data.
+
+In Assignment 3, you will ask:
+
+> **What part of this implementation can we test independently and automatically?**
+
+You will identify a small unit related to your Assignment 2 workflow, evaluate whether it is practical to test in isolation, design and implement meaningful unit tests, and configure Continuous Integration (CI) so those tests run automatically when code changes.
+
+The goal is not simply to make PHPUnit display green output. The goal is:
+
+**architecture → testable unit → test design → evidence → automated feedback**
+
+## Connection to Assignment 2
+
+Continue with the workflow your team investigated in Assignment 2. The course teams investigated:
+
+1. **Patient Registration**
+3. **Appointment Scheduling**
+5. **Recording Vital Signs**
+
+Your Assignment 3 unit must have a defensible relationship to your team's Assignment 2 workflow.
+
+> **Your workflow is not your unit.**
+
+Each workflow crosses multiple parts of OpenEMR. Use your Assignment 2 artifacts to move toward a smaller piece of implementation:
+
+```text
+Assignment 2 Workflow
+        ↓
+Component Diagram
+        ↓
+Source-Code Investigation
+        ↓
+Dependency Map
+        ↓
+Candidate Function / Class / Helper
+        ↓
+Can it reasonably be isolated?
+       / \
+     YES  NO
+      ↓    ↓
+    TEST   Investigate a smaller
+           or more suitable unit
+```
+
+A target might be a function, class, validator, formatter, parser, calculator, helper, value object, utility, or small service. These are examples of *kinds* of targets, not specific OpenEMR answers.
 
 ## Learning Objectives
 
 By the end of this assignment, you should be able to:
 
-1. Select and justify an appropriate unit-testing scope in an unfamiliar production codebase.
-2. Design and implement meaningful unit tests covering expected, boundary, invalid, and risk-based behavior.
-3. Evaluate software testability and the impact of dependencies and global state.
-4. Use PHPUnit evidence to execute, diagnose, and improve unit tests.
-5. Configure GitHub Actions so tests execute automatically and failures are visible.
-6. Explain the limits of unit testing and identify behaviors requiring broader test levels.
+1. Use architectural evidence to identify a testable unit in an unfamiliar production codebase.
+2. Distinguish a unit from a workflow, subsystem, integration, or end-to-end behavior.
+3. Evaluate testability and recognize dependencies that make isolation difficult.
+4. Design meaningful normal, boundary, invalid, and risk-based unit tests.
+5. Implement deterministic PHPUnit tests.
+6. Use data-driven/parameterized testing appropriately.
+7. Interpret failures as evidence rather than merely trying to make tests green.
+8. Configure GitHub Actions to run tests automatically.
+9. Demonstrate that local testing and CI can detect failure.
+10. Explain what unit testing cannot establish.
 
 ## Part 0 — Validate Your Environment
 
@@ -24,8 +73,7 @@ From the root of your team repository:
 ```bash
 bash environment/unit-testing/setup-unit-tests.sh
 mkdir -p assignment-03/tests
-cp environment/unit-testing/examples/ProjectVITALSmokeTest.php \
-   assignment-03/tests/ProjectVITALSmokeTest.php
+cp environment/unit-testing/examples/ProjectVITALSmokeTest.php assignment-03/tests/ProjectVITALSmokeTest.php
 bash environment/unit-testing/run-unit-tests.sh
 ```
 
@@ -35,45 +83,95 @@ A successful environment should end with output similar to:
 OK (2 tests, 2 assertions)
 ```
 
-Exact PHP/PHPUnit patch versions and timing may differ. The smoke test verifies the environment only and **does not count toward the six meaningful unit tests required for this assignment**.
+Exact PHP/PHPUnit patch versions and timing may differ. The smoke test verifies the environment only and **does not count toward the six meaningful unit tests required**.
 
 Your graded tests belong in `assignment-03/tests/`. The helper scripts use a temporary OpenEMR checkout under `.project-vital/openemr-unit/`. Do not edit that cache as the authoritative version of your work and do not commit `.project-vital/`.
 
-## Part A — Select an Appropriate Unit
+## Part A — From Your Assignment 2 Workflow to a Unit
 
-Return to your Assignment 2 architecture investigation and identify one small component related to the workflow you investigated. A complete patient/appointment/encounter workflow is too large.
+Review your Assignment 2 workflow definition, HTTP trace, C4 component diagram, source-code investigation, focused ERD, dependency map, and architecture-informed testing analysis.
 
-Suitable targets may include a function, class, validator, formatter, parser, calculator, helper, value object, utility, or small service.
+Identify **2–3 possible unit-testing targets** related to your workflow.
 
-Document the Assignment 2 workflow, source file path, class/function, responsibility, inputs, outputs, dependencies, and why this is an appropriate **unit** rather than an integration/system-test target.
+| Candidate | Source Location | Responsibility | Inputs / Outputs | Important Dependencies | Initial Testability |
+|---|---|---|---|---|---|
+| Candidate 1 | ... | ... | ... | ... | High / Medium / Low |
+| Candidate 2 | ... | ... | ... | ... | High / Medium / Low |
+| Candidate 3, if needed | ... | ... | ... | ... | High / Medium / Low |
+
+Select **one** target and explain:
+
+1. How is it connected to your Assignment 2 workflow?
+2. What evidence indicates that it participates in or supports the workflow?
+3. Why is it small enough to be considered a unit?
+4. What are its observable inputs and outputs?
+5. What dependencies might make isolation difficult?
+6. Why did you select it instead of the other candidate(s)?
+
+Do not select an unrelated utility merely because it is easy to test.
+
+## What Counts as a Unit?
+
+For this assignment, think of a unit as:
+
+> **the smallest practical piece of behavior that your team can exercise deterministically and meaningfully in isolation.**
+
+A good candidate generally lets you control inputs, observe outputs/effects, repeat the test with the same result, and minimize dependence on the complete application, browser, database, network, session, filesystem, clock, and global state.
+
+A target may initially appear suitable and turn out not to be. That discovery is useful. If substantial dependencies make isolation unreasonable, document what you learned and select a better target. Do **not** silently turn the assignment into an integration or system test.
 
 ## Part B — Evaluate Testability
 
-Inspect whether the target depends on databases, global state, environment variables, files, network/services, time/date, sessions, randomness, or other difficult-to-isolate resources.
+Investigate the dependencies of your selected target.
 
-Create a table:
-
-| Characteristic | Observation | Impact on Unit Testing |
+| Characteristic | Observation / Evidence | Impact on Unit Testing |
 |---|---|---|
-| Database dependency | ... | ... |
-| Global/config state | ... | ... |
-| Time/files/services | ... | ... |
+| Database dependency | | |
+| Global state | | |
+| Configuration / environment | | |
+| Session state | | |
+| Date / time | | |
+| Filesystem | | |
+| Network / external service | | |
+| Randomness | | |
+| Other application components | | |
 
-Rate testability as **High, Medium, or Low** and justify the rating. If the target cannot reasonably be tested in the isolated environment, reconsider the target rather than silently turning this into an integration test.
+Rate overall testability as **High, Medium, or Low** and justify the rating using evidence.
+
+Consider whether inputs are controllable, outputs observable, results repeatable, application initialization is required, a database is required, mocks/stubs become more complex than the behavior, or important dependencies are hidden in global state.
+
+A Low rating may reveal a real testability problem. If the target cannot reasonably be exercised in the Project VITAL isolated environment, return to Part A and choose a more appropriate target.
 
 ## Part C — Study Existing OpenEMR Tests
 
-Locate at least two existing OpenEMR isolated/unit tests. For each, identify the test file, production code, framework, structure, an assertion, required setup, and one practice you could reuse. Do not copy an existing test and present it as your own.
+Locate at least two existing OpenEMR isolated/unit tests. For each, identify:
+
+- test file;
+- production code being tested;
+- framework;
+- test structure;
+- at least one assertion;
+- required setup; and
+- one practice your team could reuse.
+
+Do not copy an existing test and present it as your own.
 
 ## Part D — Design Tests Before Implementing Them
 
-Design at least **6 meaningful tests**, including at least 2 normal cases, 2 boundary/edge cases, 1 invalid/error/exception case, and 1 additional risk-based case.
+Design at least **6 meaningful tests**:
+
+- at least **2 normal cases**;
+- at least **2 boundary/edge cases**;
+- at least **1 invalid/error/exception case**; and
+- at least **1 additional risk-based case**.
 
 | Test ID | Behavior / Requirement | Input | Expected Result | Category | Why It Matters |
 |---|---|---|---|---|---|
 | UT-01 | ... | ... | ... | Normal | ... |
 
-A test must make a meaningful assertion; simply executing code is insufficient.
+For every expected result, be able to explain where the expectation came from: production-code behavior, documented requirement, verified domain rule, or other defensible evidence.
+
+A test must make a meaningful assertion. Simply executing code is insufficient.
 
 ## Part E — Implement the Tests
 
@@ -83,7 +181,7 @@ Implement tests in:
 assignment-03/tests/YourSelectedComponentTest.php
 ```
 
-Use PHPUnit and meaningful names/assertions. Tests should be deterministic and isolate the target as much as practical.
+Use PHPUnit, meaningful names/assertions, deterministic behavior, and practical isolation.
 
 Think in terms of:
 
@@ -95,7 +193,11 @@ Implement at least **6 passing, meaningful unit tests**. Quality and diversity m
 
 ## Part F — Data-Driven Testing
 
-At least one behavior should use a PHPUnit data-driven/parameterized approach. Explain why the cases belong together, what varies, what remains constant, and why the approach improves the suite.
+At least one behavior must use a PHPUnit data-driven/parameterized approach.
+
+Explain why the cases exercise the same behavior, what varies, what remains constant, and why the data-driven approach improves clarity or maintainability.
+
+Select cases because they represent meaningful behavior, boundaries, equivalence classes, or risks.
 
 ## Part G — Run Locally
 
@@ -111,25 +213,37 @@ Or one test file:
 bash environment/unit-testing/run-unit-tests.sh YourSelectedComponentTest.php
 ```
 
-Record the command, tests/assertions reported, result, and execution time if shown.
+Record the command, tests/assertions reported, result, execution time if shown, and relevant warnings.
 
 ## Part H — Prove the Local Runner Detects Failure
 
-Temporarily alter one expected result in **your own test** so it is deliberately wrong. Run the suite and confirm PHPUnit reports failure. Restore the correct expectation and rerun.
+Temporarily alter **one expected result in your own test** so it is deliberately wrong. Run the suite and confirm PHPUnit reports failure. Restore the correct expectation and rerun.
 
 Required evidence:
 
 ```text
-GREEN → deliberate incorrect expectation → RED → restore → GREEN
+GREEN
+  ↓
+deliberately incorrect expectation
+  ↓
+RED
+  ↓
+inspect the failure
+  ↓
+restore correct expectation
+  ↓
+GREEN
 ```
 
-Do not leave the broken expectation in the final submission.
+Do not leave the broken expectation in the final submission. The purpose is to demonstrate that the testing mechanism detects failure.
 
-## Part I — Coverage
+## Part I — Focused Coverage
 
-Measure focused coverage for the selected unit when supported by the course environment. Do not try to maximize coverage across all OpenEMR.
+Measure focused coverage for the selected unit when supported by the course environment. Do **not** attempt to maximize coverage across all OpenEMR.
 
-Explain what is covered, what remains uncovered, whether that matters, and why 100% coverage would not prove correctness.
+Explain what is covered, what remains uncovered, whether that matters for your selected risks, what important behaviors coverage percentages do not reveal, and why 100% coverage would still not prove correctness.
+
+Coverage is evidence about execution, not proof of software quality.
 
 ## Part J — Configure Continuous Integration
 
@@ -137,11 +251,12 @@ Create the workflow from the validated Project VITAL template:
 
 ```bash
 mkdir -p .github/workflows
-cp environment/unit-testing/github-actions-unit-tests.template.yml \
-   .github/workflows/unit-tests.yml
+cp environment/unit-testing/github-actions-unit-tests.template.yml .github/workflows/unit-tests.yml
 ```
 
 The pipeline checks out the team repository and pinned OpenEMR source, prepares PHP/Composer, copies Assignment 3 tests, and executes PHPUnit.
+
+Inspect the workflow before committing it. Your team should be able to explain its major steps.
 
 ## Part K — Push the Workflow
 
@@ -159,7 +274,7 @@ Open GitHub **Actions** and locate **Project VITAL Unit Tests**. Confirm that th
 
 ### If GitHub rejects the workflow push
 
-GitHub applies additional authorization to `.github/workflows/`. If a push fails with a message mentioning `workflow` scope and you use GitHub CLI:
+If a push fails with a message mentioning `workflow` scope and you use GitHub CLI:
 
 ```bash
 gh auth refresh -h github.com -s workflow
@@ -168,7 +283,7 @@ gh auth status
 git push
 ```
 
-Confirm the appropriate workflow authorization is present. Never place tokens in the repository. See `environment/unit-testing/GITHUB_ACTIONS_SETUP.md` for detailed troubleshooting.
+Never place tokens in the repository. See `environment/unit-testing/GITHUB_ACTIONS_SETUP.md` for detailed troubleshooting.
 
 ## Part L — Verify Green CI
 
@@ -182,7 +297,7 @@ Create:
 git switch -c experiment/ci-failure
 ```
 
-Temporarily make one of your expected results deliberately incorrect, then:
+Temporarily make one expected result deliberately incorrect:
 
 ```bash
 git add assignment-03/tests
@@ -190,7 +305,9 @@ git commit -m "Experiment: verify CI detects failing unit test"
 git push -u origin experiment/ci-failure
 ```
 
-The desired result is **RED**. Inspect which test and workflow step failed and what PHPUnit reported.
+The desired result is **RED**. Inspect which test failed, which workflow step failed, what PHPUnit reported, and whether CI matches the local behavior you expected.
+
+A RED result here is successful evidence that CI detects the deliberately introduced problem.
 
 ## Part N — Restore CI to Green
 
@@ -202,35 +319,70 @@ git commit -m "Restore passing unit test"
 git push
 ```
 
-The required CI evidence is:
+Required CI evidence:
 
 ```text
 GREEN → RED → GREEN
 ```
 
+Do not merge or tag the deliberately broken state.
+
 ## Part O — Analyze a Failure
 
-Analyze one meaningful failure encountered during the assignment. Explain what failed, the failure message, your initial hypothesis, evidence inspected, actual cause, correction, and what you learned. The objective is evidence-based diagnosis, not merely making output green.
+Analyze at least one meaningful failure encountered during the assignment. This may be a test failure, setup problem, dependency problem, incorrect expectation, CI failure, or another relevant testing problem.
 
-## Part P — Identify Unit-Test Limits
+Explain:
 
-Identify one important behavior related to your component that these unit tests cannot adequately verify. Explain whether integration, system, or acceptance testing is the appropriate next level and why.
+1. What failed?
+2. What failure message or symptom did you observe?
+3. What was your initial hypothesis?
+4. What evidence did you inspect?
+5. What was the actual cause?
+6. What correction did you make?
+7. What did you learn?
+
+The objective is **evidence-based diagnosis**, not merely making output green.
+
+## Part P — What Unit Testing Cannot Tell You
+
+Return to your original Assignment 2 workflow.
+
+Identify at least one important question about that workflow that your unit tests cannot answer.
+
+For example, unit testing one component does not necessarily establish that:
+
+- the browser sends the correct request;
+- multiple components integrate correctly;
+- data is associated with the correct record;
+- information persists correctly in the database;
+- authorization rules work across the complete workflow; or
+- the complete user workflow satisfies its requirements.
+
+For the behavior you identify:
+
+1. Explain why your unit tests cannot establish it.
+2. Identify the next appropriate testing level: **integration, system, or acceptance testing**.
+3. Explain what additional environment, data, dependencies, or evidence that test would require.
+
+The purpose is to understand the **scope and limits** of unit testing.
 
 ## Required Deliverables
 
-1. Unit-test target and scope justification.
-2. Testability assessment and rating.
-3. Analysis of at least two existing OpenEMR tests.
-4. Unit-test design table with at least six tests.
-5. At least six meaningful passing unit tests.
-6. At least one data-driven/parameterized test.
-7. Local GREEN → RED → GREEN evidence.
-8. Focused coverage analysis when supported.
-9. `.github/workflows/unit-tests.yml`.
-10. CI GREEN → RED → GREEN evidence.
-11. Failure analysis.
-12. Testing-level reflection.
-13. AI Verification Log if generative AI was used.
+1. Assignment 2 workflow identification.
+2. Candidate-unit investigation and final target justification.
+3. Testability assessment and rating.
+4. Analysis of at least two existing OpenEMR isolated/unit tests.
+5. Unit-test design table with at least six tests.
+6. At least six meaningful passing unit tests.
+7. At least one data-driven/parameterized test.
+8. Local GREEN → RED → GREEN evidence.
+9. Focused coverage analysis when supported.
+10. `.github/workflows/unit-tests.yml`.
+11. Successful CI evidence.
+12. CI GREEN → RED → GREEN evidence.
+13. Failure analysis.
+14. Unit-testing limits / next-testing-level reflection.
+15. AI Verification Log if generative AI was used.
 
 ## Recommended Repository Structure
 
@@ -246,6 +398,8 @@ VITAL-Team-XX/
 │   ├── failure-analysis.md
 │   ├── testing-levels.md
 │   ├── ai-verification-log.md
+│   ├── evidence/
+│   │   └── README.md
 │   └── tests/
 │       ├── ProjectVITALSmokeTest.php
 │       └── YourSelectedComponentTest.php
@@ -260,28 +414,35 @@ The smoke test may remain as environment evidence but does not count toward the 
 
 | Criterion | Weight |
 |---|---:|
-| Unit selection and testability analysis | 15% |
-| Unit test design | 20% |
-| Unit test implementation | 20% |
-| Parameterized testing and coverage analysis | 10% |
+| A2 → unit selection and testability reasoning | 15% |
+| Unit-test design | 20% |
+| Unit-test implementation | 20% |
+| Parameterized testing and focused coverage | 10% |
 | Continuous Integration | 20% |
-| Red → Green experiment and failure diagnosis | 10% |
+| GREEN → RED → GREEN and failure diagnosis | 10% |
 | Testing-level reflection and communication | 5% |
 | **Total** | **100%** |
 
 ## Use of Generative AI
 
-Generative AI may be used as an investigation/learning aid subject to the course policy—for example, to explain PHP/PHPUnit syntax, propose test cases or boundaries, explain failures, or discuss CI/testability.
+Generative AI may be used as an investigation and learning aid subject to the course policy—for example, to explain PHP/PHPUnit syntax, propose test cases or boundaries, explain failures, investigate dependencies, discuss testability, or explain CI configuration.
 
-However, **AI-generated tests are not evidence that behavior is correct**. Your team must verify expected results, production-code meaning, scope, assertions, determinism, and relevance. Never provide credentials, tokens, real patient information, or other sensitive data.
+However:
+
+> **AI-generated tests are not evidence that behavior is correct.**
+
+Your team must verify expected results, production-code meaning, testing scope, assertions, dependencies, determinism, and relevance to the Assignment 2 workflow.
+
+Never provide credentials, tokens, real patient information, or other sensitive data.
 
 If AI is used, document at least two meaningful suggestions:
 
-| AI Suggestion | How We Verified It | Result |
+| AI Suggestion / Claim | How We Verified It | Result |
 |---|---|---|
 | ... | ... | Useful / Modified / Rejected |
+| ... | ... | Useful / Modified / Rejected |
 
-At least one entry must demonstrate evaluation rather than automatic acceptance.
+At least one entry must demonstrate evaluation rather than automatic acceptance. An AI response, by itself, is **not evidence**.
 
 ## Submission
 
@@ -293,7 +454,7 @@ Required tag:
 assignment-03
 ```
 
-Before tagging, confirm all deliverables are committed, six meaningful tests pass, local and CI runs are green, deliberate failures are restored, `.project-vital/` is not committed, and no credentials/real patient data are included.
+Before tagging, confirm all deliverables are committed, six meaningful tests pass, local and CI runs are green, deliberate failures are restored, `.project-vital/` is not committed, and no credentials or real patient data are included.
 
 ```bash
 git tag assignment-03
@@ -305,25 +466,47 @@ Submit the repository reference and `assignment-03` tag through the LMS.
 ## Workflow Summary
 
 ```text
-Validate environment
-      ↓
+Assignment 2 workflow
+        ↓
+Review architecture evidence
+        ↓
+Identify 2–3 candidate units
+        ↓
 Select unit + assess testability
-      ↓
-Study existing tests
-      ↓
+        ↓
+Study existing OpenEMR tests
+        ↓
 Design 6+ tests
-      ↓
+        ↓
 Implement + run locally
-      ↓
+        ↓
 GREEN → RED → GREEN
-      ↓
+        ↓
+Focused coverage analysis
+        ↓
 Configure GitHub Actions
-      ↓
+        ↓
 CI GREEN → RED → GREEN
-      ↓
-Analyze coverage/failure
-      ↓
-Explain limits of unit testing
-      ↓
+        ↓
+Analyze a meaningful failure
+        ↓
+Return to original workflow
+        ↓
+Explain what unit testing cannot establish
+        ↓
+Identify the next testing level
+        ↓
 Tag assignment-03
 ```
+
+## Final Perspective
+
+Assignment 3 is not primarily about PHPUnit syntax. It is about making a justified testing decision.
+
+You began with a real workflow, investigated its architecture, selected a small piece of behavior, evaluated whether it could be isolated, designed tests from evidence and risk, and automated those tests.
+
+A passing test tells you that a particular observation matched a particular expectation under particular conditions.
+
+It does **not** automatically tell you that the complete workflow is correct.
+
+Understanding that distinction is part of becoming a software tester.
