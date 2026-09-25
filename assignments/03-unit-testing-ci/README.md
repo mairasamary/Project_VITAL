@@ -16,6 +16,17 @@ The goal is not simply to make PHPUnit display green output. The goal is:
 
 **architecture → testable unit → test design → evidence → automated feedback**
 
+## Start Here
+
+Your private team repository already contains the Assignment 3 workspace and CI configuration.
+
+Before selecting a unit or writing your graded tests:
+
+1. **Pull the latest version of your team repository.**
+
+   ```bash
+   git pull
+
 ## Connection to Assignment 2
 
 Continue with the workflow your team investigated in Assignment 2. The course teams investigated:
