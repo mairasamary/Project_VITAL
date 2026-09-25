@@ -22,7 +22,21 @@ jobs:
       - name: Check out team repository
         uses: actions/checkout@v7
 
+      - name: Check for Project VITAL tests
+        id: project-vital-tests
+        shell: bash
+        run: |
+          if find assignment-03/tests -maxdepth 1 -type f -name '*Test.php' -print -quit | grep -q .; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+            echo "Project VITAL tests found."
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+            echo "No Project VITAL *Test.php files found yet."
+            echo "CI setup is ready. PHPUnit will run after tests are added."
+          fi
+
       - name: Check out pinned OpenEMR source
+        if: steps.project-vital-tests.outputs.has_tests == 'true'
         uses: actions/checkout@v7
         with:
           repository: openemr/openemr
@@ -30,12 +44,14 @@ jobs:
           path: openemr-source
 
       - name: Set up PHP 8.2
+        if: steps.project-vital-tests.outputs.has_tests == 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           coverage: xdebug
 
       - name: Cache Composer downloads
+        if: steps.project-vital-tests.outputs.has_tests == 'true'
         uses: actions/cache@v5
         with:
           path: ~/.cache/composer/files
@@ -44,16 +60,19 @@ jobs:
             ${{ runner.os }}-composer-openemr-v8_2_0-
 
       - name: Install OpenEMR dependencies
+        if: steps.project-vital-tests.outputs.has_tests == 'true'
         working-directory: openemr-source
         run: composer install --prefer-dist --no-progress
 
       - name: Copy Project VITAL tests into OpenEMR isolated suite
+        if: steps.project-vital-tests.outputs.has_tests == 'true'
         run: |
           mkdir -p openemr-source/tests/Tests/Isolated/ProjectVITAL
           cp assignment-03/tests/*Test.php \
              openemr-source/tests/Tests/Isolated/ProjectVITAL/
 
       - name: Run Project VITAL unit tests
+        if: steps.project-vital-tests.outputs.has_tests == 'true'
         working-directory: openemr-source
         run: |
           vendor/bin/phpunit \
@@ -63,7 +82,7 @@ jobs:
             --coverage-clover=../clover.xml
 
       - name: Upload test and coverage artifacts
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.project-vital-tests.outputs.has_tests == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: project-vital-unit-test-results
