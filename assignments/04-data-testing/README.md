@@ -1,231 +1,176 @@
-# Assignment 4 — Data Testing: Quality, Integrity, and Scale
+# Project VITAL — Assignment 4: Data Testing — Quality, Integrity, and Scale
 
 **Team Assignment | OpenEMR | Synthetic Data | Python | MariaDB**
 
-**Due: Tuesday, October 20, 2026, at 11:59 PM ET**
-
 ## Purpose
 
-In Assignment 1, you explored what OpenEMR does. In Assignment 2, you investigated how one workflow is implemented. In Assignment 3, you tested a small part of that implementation independently.
+In Assignment 1, you explored **what OpenEMR does**. In Assignment 2, you investigated **how a workflow is implemented**. In Assignment 3, you tested a small part of that implementation independently.
 
-Assignment 4 asks a different question:
+Assignment 4 asks:
 
 > **How can we determine whether the data used by and stored in a software system is correct, consistent, reproducible, and usable at different scales?**
 
-You will generate **synthetic data only**, validate it before and after loading, deliberately introduce controlled data defects, investigate atomicity and insertion order, and compare the same data-testing pipeline at three standardized Project VITAL data levels.
+Your team will generate reproducible **synthetic data**, develop and apply data-quality rules, load data into an **isolated** OpenEMR database, investigate deliberately introduced defects and database behavior, and compare three dataset sizes.
 
-The datasets created here are reusable Project VITAL test fixtures. Later assignments may use the same levels to investigate efficiency, latency, scalability, and reliability.
+The goal is not simply to generate thousands of records or obtain a `PASS` message. The goal is:
+
+**data specification → reproducible generation → validation → controlled loading → evidence → experiments → interpretation**
+
+## Start Here
+
+Your private team repository contains an Assignment 4 workspace and starter infrastructure under `environment/data-testing/`.
+
+1. Pull the latest version of your team repository (`git pull`).
+2. Read this assignment and `environment/data-testing/README.md` before running Docker commands.
+3. Confirm that Docker is running. **Do not reset or delete your A1–A3 OpenEMR environment.**
+4. Start by generating and validating the **small** dataset; do not begin with 20,000 patients.
+5. Keep team-developed scripts, tests, and reports under `assignment-04/`.
+
+The environment README contains the full, tested commands for **dedicated Docker Compose projects, identity initialization, dry runs, and confirmed loads**. Never substitute an existing course database for the dedicated A4 database.
+
+## Connection to Previous Assignments
+
+Revisit the workflow your team investigated in Assignment 2: **Patient Registration, Appointment Scheduling, or Recording Vital Signs**. Its architecture, data model, URL trace, and related observations will help you decide which fields, relationships, and data expectations to investigate.
+
+Assignment 3 showed that passing unit tests cannot establish that complete workflows and their stored data are correct. Here you will explicitly test data quality **before** and **after** database insertion.
+
+> **Database acceptance is not proof of semantic correctness.** A row may be inserted successfully and still violate an application-level expectation.
 
 ## Learning Objectives
 
 By the end of this assignment, your team should be able to:
 
-1. distinguish data testing from functional testing;
-2. define testable data-quality properties;
-3. generate reproducible synthetic relational data;
-4. validate completeness, validity, uniqueness, consistency, and referential integrity;
-5. distinguish database acceptance from semantically correct data;
-6. verify loaded data with database evidence and selected UI observations;
-7. demonstrate that a validator detects known defects;
-8. investigate atomicity and insertion-order behavior;
-9. compare data-testing behavior across dataset sizes;
-10. document evidence, assumptions, uncertainty, and AI-assisted work.
+1. Distinguish data testing from functional testing.
+2. Define evidence-based data-quality properties.
+3. Generate reproducible synthetic relational data.
+4. Validate completeness, validity, uniqueness, consistency, and referential integrity.
+5. Distinguish database acceptance from semantically correct data.
+6. Verify loaded data with database evidence and selected UI observations.
+7. Show that a validator detects known defects.
+8. Investigate atomicity and insertion-order behavior.
+9. Compare data-testing behavior across dataset sizes without confusing data volume with workload.
+10. Document evidence, assumptions, uncertainty, and AI-assisted work.
 
-# Standard Project VITAL Data Levels
+## Standard Project VITAL Data Levels
 
-| Level | Patients | Primary purpose in A4 |
+| Level | Patients | Primary purpose in Assignment 4 |
 |---|---:|---|
-| **Small** | **200** | correctness, debugging, validation |
-| **Medium** | **2,000** | comparison at moderate scale |
-| **Large** | **20,000** | high-volume integrity and pipeline behavior |
+| **Small** | **200** | Correctness, debugging, validation |
+| **Medium** | **2,000** | Comparison at moderate scale |
+| **Large** | **20,000** | High-volume integrity and pipeline behavior |
 
-Use seed **42** for submitted datasets. Course validation may use an alternate seed such as **314159**.
+Use **seed 42** for submitted datasets. Course validation may use another seed, such as **314159**. Running the generator twice with the same level and seed should produce equivalent dataset contents, including related encounters, appointments, and vital-sign records.
 
-Running the generator twice with the same level and seed should produce equivalent dataset contents.
+**Data volume is not workload.** A database containing 20,000 patients is not the same as 20,000 simultaneous requests. Record execution times as baseline observations, not as rigorous proof of performance or scalability.
 
-## Data Volume Is Not Workload
+## Part 0 — Validate Your Environment
 
-In A4 you vary **data volume**, not concurrency/load. A database containing 20,000 patients is not the same experiment as 20,000 simultaneous requests. Later assignments may combine dataset size with workload.
+Start from the **root of your team repository**. Generate the small fixture, then validate it:
 
-# Safety, Privacy, and Scope
-
-Use **synthetic data only**. Do not use real patient information, real medical records, personally identifying information copied from real people, production OpenEMR systems, or institutional clinical systems.
-
-Perform database experiments only in the isolated Project VITAL/OpenEMR environment.
-
-# A4 Pipeline
-
-```text
-Define data properties
-        ↓
-Generate synthetic data
-        ↓
-Pre-load validation
-        ↓
-Load into isolated OpenEMR
-        ↓
-Post-load database validation
-        ↓
-Selected UI spot-checks
-        ↓
-Controlled defect injection
-        ↓
-Validator detects defect
-        ↓
-Repair
-        ↓
-Validation passes again
-        ↓
-Compare 200 / 2,000 / 20,000 patients
+```bash
+python3 environment/data-testing/scripts/generate_data.py --level small --seed 42 --output .project-vital/data/small
+python3 environment/data-testing/scripts/validate_data.py --input .project-vital/data/small
 ```
 
-# Part A — Data Specification
+A valid small fixture should report `PASS` and **200 patients**, with related record counts recorded in its manifest and validator output. A `PASS` result demonstrates only the properties checked by the supplied validator; it is **not** your completed data-testing assignment.
 
-Complete `assignment-04/data-specification.md`.
+The provided `generate_data.py`, `validate_data.py`, and `load_data.py` are **starter infrastructure**, not the finished graded deliverables. Your team must document adaptations and implement its own additional validation, tests, experiments, and analysis.
 
-Identify:
+### Set up the isolated A4 database
 
-- entities/tables represented;
-- important fields;
-- required versus optional fields;
-- identifiers;
-- relationships among records;
-- categorical values;
-- date/time relationships;
-- domain constraints you intend to validate;
-- which properties come from direct evidence and which are assumptions.
+Follow `environment/data-testing/README.md` to start the dedicated Compose project (`vital-a4-student`), initialize the identity marker **only in a new, empty A4 database**, run the loader in dry-run mode, and then run a confirmed load when the environment is verified. Follow that document's instructions for separate environments for medium and large loads.
 
-For important properties, identify evidence from the OpenEMR schema, source code, observed UI behavior, Assignment 2 evidence, or course specification. **AI-generated statements are not evidence.**
+**Do not run `docker compose down -v` on the original A1–A3 project.** Never load real patient information, reuse an existing clinical database, or reset a database to make an experiment easier. Do not commit `.project-vital/`, database dumps, passwords, tokens, or generated datasets.
 
-# Part B — Reproducible Synthetic Data Generation
+## Part A — Define the Data Specification
 
-Use the provided generation framework to support:
+Complete `assignment-04/data-specification.md` **before evaluating the datasets**.
 
-```text
-small   → 200 patients
-medium  → 2,000 patients
-large   → 20,000 patients
-```
+Document the entities/tables represented; important fields and identifiers; required versus optional fields; relationships; categories; date/time relationships; and domain constraints to test. Label each rule as **supported by evidence** or **a hypothesis that still needs verification**.
 
-The generator must accept a configurable seed.
+Use evidence from OpenEMR schema/source code, observed UI behavior, your Assignment 2 artifacts, or the course fixture specification. **AI-generated statements alone are not evidence.**
 
-The levels must not differ only in patient rows. Generate related synthetic records such as encounters, appointments, and vital-sign records according to the provided framework. Relationships must remain internally consistent except during controlled experiments.
+## Part B — Reproducible Synthetic Data Generation
 
-Do **not** commit large generated datasets unless explicitly instructed. Your repository should contain the code/configuration needed to reproduce them from `generator + level + seed`.
+Use the supplied framework to generate each of the three levels with a configurable seed. Include consistent **patients, encounters, appointments, and vital-sign records**, not merely different numbers of patient rows.
 
-# Part C — Data-Quality Test Plan
+Run the generator twice with the same level and seed; demonstrate reproducibility. Explain how your code or configuration creates identifiers, relationships, categories, dates, and measurements. Synthetic vital CSVs use **pounds** for weight and **inches** for height, as documented in the environment README.
 
-Complete `assignment-04/validation-plan.md`. Define properties **before** evaluating the datasets.
+Store the code needed to recreate fixtures, **not** large generated CSVs. Record any changes your team makes to starter scripts.
 
-Your plan must include:
+## Part C — Design a Data-Quality Test Plan
 
-- **Completeness:** required identifiers/relationships/records are present.
-- **Validity:** values have expected representations/types/categories and evidence-supported constraints.
-- **Uniqueness:** values expected to be unique contain no unexpected duplicates.
-- **Consistency:** related or derived values do not contradict one another.
-- **Referential integrity:** dependent records reference appropriate existing parent records.
+Complete `assignment-04/validation-plan.md` before inspecting validation outcomes. Address:
 
-Do not assume a field must be unique or required because its name suggests it. Verify the requirement.
+- **Completeness:** required identifiers, records, or relationships are present.
+- **Validity:** representations, types, categories, and supported constraints are respected.
+- **Uniqueness:** fields actually expected to be unique contain no unexpected duplicates.
+- **Consistency:** related or derived fields do not contradict one another.
+- **Referential integrity:** dependent records reference appropriate existing records.
 
-For each rule record:
+For every important rule, specify its justification, evidence, test method, and expected result.
 
-| Property | Why it matters | Evidence for expected behavior | How it will be tested |
+| Property / rule | Why it matters | Evidence supporting expectation | Test method / expected result |
 |---|---|---|---|
+| ... | ... | ... | ... |
 
-# Part D — Pre-Load Validation
+Do not assume that a column is unique or mandatory based solely on its name.
 
-Run the validator against each generated dataset before loading.
+## Part D — Perform Pre-Load Validation
 
-Record at least:
+Run the validator on **small, medium, and large** fixtures before loading them. Record level, seed, expected and actual patient and related-record counts, rules run, failures, and overall result.
 
-- level and seed;
-- expected/actual patient count;
-- related-record counts;
-- rules executed;
-- failures;
-- overall result.
+Describe **what the validator does not check** and add team-designed validation/tests needed to address important documented rules. A successful generator execution does not prove data quality.
 
-A successful generator run does **not** prove generated data is correct.
+## Part E — Load Data into Isolated OpenEMR
 
-# Part E — Load into OpenEMR
+Use the controlled loader and exact safety workflow in `environment/data-testing/README.md`. For each level, record attempted, committed, and rejected records; warnings/errors; and loading duration.
 
-Use the provided controlled loader. Do not manually create hundreds or thousands of records through the UI.
+The loader is protected against loading a populated database. For separate levels use separate **new A4 Compose projects and volumes** with distinct container names and ports. Do not delete another experiment's database or load another fixture into a populated one.
 
-For each level record:
+## Part F — Validate the Loaded Database
 
-- records attempted;
-- records successfully loaded;
-- records rejected;
-- load duration;
-- unexpected warnings/errors.
+Check actual database state against the fixture and your specification. Investigate counts, missing values, uniqueness, references, expected relationships, and selected stored field values. Save relevant SQL queries and results.
 
-# Part F — Post-Load Database Validation
+Explain any differences between **what the loader accepted** and **what the data specification requires**.
 
-After loading, verify the database contains what you intended. Check as appropriate:
+## Part G — Perform UI Spot Checks
 
-- record counts;
-- NULL/missing values;
-- uniqueness;
-- referential integrity;
-- expected relationships;
-- selected field values.
+For each level, inspect a small, purposeful sample using OpenEMR. Can you locate generated patients? Do relevant details match the database? Are associated encounters, appointments, or vital-sign records visible where expected?
 
-Do not conclude that data is correct merely because an INSERT succeeded. Distinguish **database acceptance** from **semantic validity**.
+Record a few meaningful examples and limitations. Do **not** manually inspect thousands of records or treat a few screenshots as proof of full correctness.
 
-# Part G — UI Spot Checks
+## Part H — Show the Validator Detects a Defect (GREEN → RED → GREEN)
 
-For each level, inspect a small sample through OpenEMR. Determine whether generated patients can be found, displayed information matches loaded data, related records appear where expected, and whether UI behavior differs from database expectations.
+Complete `assignment-04/defect-injection.md`:
 
-Do not manually inspect thousands of records. Provide a few meaningful examples.
+1. **GREEN:** validate known-valid synthetic data.
+2. **RED:** intentionally introduce **one controlled defect** (e.g., duplicate ID, missing required value, orphan reference, invalid category, or inconsistent relationship).
+3. **GREEN:** repair or regenerate the data and confirm validation passes again.
 
-# Part H — Controlled Defect Injection: GREEN → RED → GREEN
+Document the defect, the evidence establishing why it is invalid, commands, outputs, and interpretation. A deliberate `RED` result is **successful testing evidence**. Leave the final submission in a valid state.
 
-Document in `assignment-04/defect-injection.md`.
+## Part I — Investigate Atomicity
 
-**GREEN:** validate a known-valid dataset.
+Complete `assignment-04/atomicity-experiment.md`. Attempt a controlled multi-record operation in the isolated A4 environment with failure partway through. Explain:
 
-**RED:** introduce one controlled defect, such as a duplicate identifier, missing required value, orphan record, invalid category, inconsistent relationship, or other evidence-supported invalid value. The validator should detect it.
+1. What operation and records were intended?
+2. Where/how was failure introduced, and what was predicted?
+3. What records remained after the failure?
+4. Did the operation behave atomically?
+5. What SQL/output evidence supports your conclusion, and why would partial completion matter?
 
-**GREEN:** repair/regenerate the data and demonstrate validation passes again.
+Do not run destructive experiments against the original course environment.
 
-Record the defect, why it is invalid, evidence for that expectation, outputs before/after corruption and after repair, and what the experiment demonstrates.
+## Part J — Investigate Insertion Order and Referential Integrity
 
-> A RED result during this experiment is successful testing evidence.
+Complete `assignment-04/insertion-order-experiment.md`. Use the provided safe framework to attempt a dependent record before its expected parent.
 
-# Part I — Atomicity Experiment
+Record the relationship, expected order, abnormal order, database response, semantic validator response, and conclusion. If SQL accepts an orphan or out-of-order row, explain why database acceptance alone is insufficient. Document any rollback or cleanup.
 
-Document in `assignment-04/atomicity-experiment.md`.
+## Part K — Compare All Three Data Levels
 
-Investigate a multi-record operation with a controlled failure partway through. Answer:
-
-1. What operation was attempted?
-2. What records were intended?
-3. Where/how was failure introduced?
-4. What did you predict?
-5. What actually remained in the database?
-6. Was the operation atomic?
-7. What evidence supports the conclusion?
-8. Why could partial completion matter?
-
-# Part J — Insertion Order and Referential Integrity
-
-Document in `assignment-04/insertion-order-experiment.md`.
-
-Using the safe provided framework, attempt a controlled insertion-order violation, such as a dependent record before its expected parent.
-
-Answer:
-
-1. What relationship is being investigated?
-2. What order is normally expected?
-3. What abnormal order was attempted?
-4. Did the database accept/reject it?
-5. Did the semantic validator accept/reject the resulting state?
-6. What does this reveal about relying only on database constraints?
-7. What should testing check beyond SQL success/failure?
-
-# Part K — Three-Level Scale Experiment
-
-Run the supported pipeline for all three levels and complete `assignment-04/scale-analysis.md`.
+Complete `assignment-04/scale-analysis.md` and implement a reproducible `assignment-04/scripts/benchmark.py` (or equivalent) to collect the results.
 
 | Metric | Small | Medium | Large |
 |---|---:|---:|---:|
@@ -238,36 +183,47 @@ Run the supported pipeline for all three levels and complete `assignment-04/scal
 | Validation time | | | |
 | Validation errors | | | |
 
-Discuss whether rules behaved consistently, problems appeared only at larger volumes, related records scaled as expected, unexpected failures/resource issues occurred, and which observations deserve later performance investigation.
+Discuss scaling of related records, consistency of validation rules, resource limits, new errors at larger sizes, and which findings merit later performance testing.
 
-These times are **baseline observations, not rigorous performance benchmarks**. Do not claim scalability or poor performance from one run. Rigorous performance testing requires additional controls, repetitions, workload definitions, warm-up decisions, latency distributions, and other experimental considerations.
+**Do not claim rigorous scalability conclusions from a single run.** Proper performance experiments also consider repetitions, workload, warm-up, distributions, and other controls.
 
-# Part L — Workflow-Specific Data Investigation
+## Part L — Return to Your Assignment 2 Workflow
 
-Return to your Assignment 2 workflow.
+Investigate data concerns specific to your team's workflow:
 
-**Appointment Scheduling:** investigate patient references, provider/facility/category relationships, date/time representation, status/category values, and scheduling consistency.
+- **Patient Registration:** identifiers, demographics, optional/required values, duplicates, and registration consistency.
+- **Appointment Scheduling:** patient references, provider/facility/category relationships, date/time representations, status categories, and scheduling consistency.
+- **Recording Vital Signs:** patient/encounter/form relationships, absent measurements, numeric representation, derived values, and supported range expectations.
 
-**Vital Signs:** investigate patient/encounter/form relationships, missing measurements, numeric representation, related/derived values, and evidence-supported validation/range behavior.
+Use system evidence for your expectations. Label unsupported domain rules as hypotheses rather than treating them as facts.
 
-**Patient Registration:** investigate identifiers, demographics, missing values, duplicates, uniqueness assumptions, and registration consistency.
+## Part M — Verify AI-Assisted Claims
 
-Do not invent domain rules. Every expectation must be supported by evidence or labeled as a hypothesis.
+If your team uses generative AI, complete `assignment-04/ai-verification-log.md` for **at least two substantive claims or suggestions**.
 
-# Part M — AI Verification Log
-
-If generative AI is used, maintain `assignment-04/ai-verification-log.md`.
-
-For at least **two substantive AI-assisted claims or suggestions**, record:
-
-| AI suggestion/claim | How verified | Evidence | Accepted, modified, or rejected? |
+| AI claim / suggestion | How we verified it | Evidence | Accepted, modified, or rejected? |
 |---|---|---|---|
+| ... | ... | ... | ... |
 
-Claims requiring verification include statements such as "this field is required," "this column is unique," "this relationship has a foreign key," or "this range is invalid."
+A strong log may include a suggestion your team rejected after inspecting the actual system. Never submit private credentials, real patient data, or unverified AI assumptions as evidence.
 
-A strong log may include an AI suggestion that was rejected or corrected after examining the actual system.
+## Required Deliverables
 
-# Required Deliverables
+1. Data specification with evidence and assumptions.
+2. Reproducible synthetic data generator/configuration for all three levels.
+3. Data-quality validation plan and implemented tests.
+4. Pre-load validation evidence for each level.
+5. Controlled loading and post-load database evidence for each level.
+6. Selected OpenEMR UI spot-check evidence.
+7. Defect-injection **GREEN → RED → GREEN** report.
+8. Atomicity experiment report.
+9. Insertion-order/referential-integrity experiment report.
+10. Three-level scale measurements, benchmark script, and analysis.
+11. Workflow-specific data investigation.
+12. AI Verification Log **if AI was used**.
+13. Reproduction instructions, commands, and clearly stated limitations.
+
+## Recommended Repository Structure
 
 ```text
 assignment-04/
@@ -292,33 +248,9 @@ assignment-04/
     └── benchmarks/
 ```
 
-**Starter infrastructure:** The course repository provides `generate_data.py`, `validate_data.py`, and `load_data.py` under `environment/data-testing/scripts/`. These are starting points, not completed student deliverables. Document any adaptations and implement the additional validation, testing, and analysis required by this assignment.
+Place team-developed scripts and tests under `assignment-04/`. You may adapt the course-provided scripts from `environment/data-testing/scripts/` with attribution, but identify your team's own contributions. Use `datasets/README.md` to explain how to recreate the datasets, rather than committing generated patient CSVs.
 
-**Benchmarking:** Develop your own `assignment-04/scripts/benchmark.py` (or an equivalent reproducible benchmark tool) to measure and record the required scale experiments.
-
-**Submission:** Place your team-developed scripts and tests under `assignment-04/` in your team repository. You may reuse the provided starter scripts with attribution, but identify what your team added or modified. Do not commit generated patient datasets, credentials, or database dumps. Use `datasets/README.md` to document how to reproduce datasets.
-
-The provided infrastructure may add supporting files.
-
-# Required Evidence
-
-Include enough evidence to reproduce and evaluate your conclusions:
-
-- commands used;
-- dataset level and seed;
-- generated record counts;
-- validation results;
-- relevant database queries/results;
-- selected UI evidence;
-- GREEN → RED → GREEN evidence;
-- atomicity evidence;
-- insertion-order evidence;
-- three-level scale results;
-- uncertainties and limitations.
-
-Prefer concise, meaningful evidence over large screenshot collections.
-
-# Evaluation Rubric
+## Evaluation
 
 | Criterion | Points |
 |---|---:|
@@ -333,47 +265,57 @@ Prefer concise, meaningful evidence over large screenshot collections.
 | Evidence, communication & AI verification | **5** |
 | **Total** | **100** |
 
-Strong work defines properties before testing, distinguishes evidence from assumptions, generates reproducibly, validates relationships rather than only counts, proves validators can detect controlled defects, combines database/application evidence, interprets unexpected results, avoids unsupported medical assumptions, distinguishes data volume from workload, and documents uncertainty.
+You are evaluated on justified test rules, meaningful evidence, reproducibility, and your analysis—not on obtaining a particular execution time or making every experimental operation succeed.
 
-You are not graded on obtaining a particular runtime or making every experiment pass.
+## Use of Generative AI
 
-# Repository Workflow and Submission
+You may use AI as an investigation and learning aid subject to the course policy—for example, to propose validation ideas, interpret error messages, or explain code. Your team remains responsible for checking those suggestions against evidence.
 
-Work in your assigned private Project VITAL team repository. Start with:
+> **An AI-generated rule or test is not proof that an OpenEMR requirement exists.**
 
-```bash
-git pull
-```
+Verify rules with source, schema, observed behavior, or the explicit assignment specification; document at least two meaningful AI-assisted claims if AI was used.
 
-Commit meaningful units of work. Do not commit secrets, local environment configuration, unintended database dumps, real data, or generated large datasets.
+## Submission
 
-Before submission:
+Work in your assigned private Project VITAL team repository. Before submitting, confirm that the required reports and code are committed; the standard datasets can be regenerated with seed `42`; deliberate defects have been repaired; tests and evidence are reproducible; and no real patient information, credentials, large generated datasets, or database dumps are committed.
 
-1. ensure required files are present;
-2. regenerate standard datasets with seed `42`;
-3. verify required experiments;
-4. confirm the documented final state is reproducible;
-5. confirm no real patient information is present;
-6. review the AI verification log;
-7. commit and push required work.
-
-Create the submission tag:
+Tag the completed submission:
 
 ```bash
 git tag -a assignment-04 -m "Assignment 4 submission"
 git push origin assignment-04
 ```
 
-After pushing your work and the `assignment-04` tag, submit your team repository reference and submission tag through the LMS. Do not upload a separate ZIP unless your instructor specifically requests one.
+Submit your team repository reference and tag `assignment-04` through the LMS. **Do not submit a separate ZIP** unless your instructor requests one.
 
-# Final Perspective
+## Workflow Summary
 
-A program can execute successfully while operating on incorrect data.
+```text
+Review Assignment 2 workflow evidence
+        ↓
+Define and justify data-quality rules
+        ↓
+Generate small / medium / large synthetic fixtures
+        ↓
+Validate before loading
+        ↓
+Load in separate isolated A4 databases
+        ↓
+Verify database and UI observations
+        ↓
+Controlled defect: GREEN → RED → GREEN
+        ↓
+Atomicity + insertion-order investigations
+        ↓
+Compare 200 / 2,000 / 20,000 patients
+        ↓
+Interpret limitations and verify AI claims
+        ↓
+Tag assignment-04
+```
 
-A database can accept a row while the resulting state is semantically wrong.
+## Final Perspective
 
-A validator can pass a small dataset and still contain assumptions that fail at larger scales.
+A program can run successfully while operating on incorrect data. A database can accept a row while leaving the system in a semantically incorrect state. A validator can pass a small fixture while omitting important properties or assumptions.
 
-Assignment 4 therefore asks you to treat **data itself as a testable artifact**.
-
-The goal is not merely to create 20,000 synthetic patients. The goal is to build evidence that the data and its relationships satisfy clearly defined properties—and to understand the limits of that evidence.
+Assignment 4 asks you to treat **data itself as a testable artifact**: specify its expected properties, investigate those properties with reproducible evidence, and explain what your results do—and do not—establish.
