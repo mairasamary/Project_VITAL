@@ -1,0 +1,21 @@
+services:
+  mysql:
+    container_name: ${VITAL_DB_CONTAINER:-vital-a4-db}
+
+  openemr:
+    container_name: ${VITAL_APP_CONTAINER:-vital-a4-app}
+  a4-runner:
+    image: python:3.12-slim
+    profiles:
+      - tools
+    working_dir: /workspace
+    volumes:
+      - ../:/workspace:ro
+      - ../.project-vital/data:/data
+    environment:
+      MYSQL_HOST: mysql
+      VITAL_A4_LOADER: "yes"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      - mysql
+    command: ["python", "--version"]
