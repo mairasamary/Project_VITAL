@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - main
+      - semester/2026-fall
       - 'feature/**'
       - 'experiment/**'
   pull_request:
     branches:
       - main
+      - semester/2026-fall
 
 permissions:
   contents: read
