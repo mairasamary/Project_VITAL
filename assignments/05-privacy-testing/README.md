@@ -315,6 +315,21 @@ Your final write-up must answer the following questions.
 
 ------------------------------------------------------------------------
 
+## Student Report Templates
+
+Students must complete the following six Markdown reports in their private team's `assignment-05/` folder:
+
+- [`privacy-plan.md`](templates/privacy-plan.md)
+- [`pseudonymization-report.md`](templates/pseudonymization-report.md)
+- [`reidentification-analysis.md`](templates/reidentification-analysis.md)
+- [`privacy-validation.md`](templates/privacy-validation.md)
+- [`utility-analysis.md`](templates/utility-analysis.md)
+- [`privacy-ci-report.md`](templates/privacy-ci-report.md)
+
+The linked files are blank instructor/model templates. Students must provide their own analyses, results, and evidence.
+
+---
+
 # Deliverables
 
 Submit the Project VITAL repository containing:

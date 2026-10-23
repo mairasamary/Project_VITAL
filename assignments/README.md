@@ -42,3 +42,18 @@ The planned sequence is designed to move from **system understanding** to increa
    - end-to-end validation
 
 Assignments should be designed so instructors may use the entire sequence or adopt individual modules independently.
+
+## Fall 2026 Assignment Releases
+
+| Assignment | Topic | Status |
+|---|---|---|
+| 1 | [System Exploration](01-system-exploration/README.md) | Released |
+| 2 | [System Architecture](02-system-architecture/README.md) | Released |
+| 3 | [Unit Testing and CI](03-unit-testing-ci/README.md) | Released |
+| 4 | [Data Testing](04-data-testing/README.md) | Released |
+| 5 | [Privacy Testing](05-privacy-testing/README.md) | Released |
+
+**Assignment 5 deadline:** November 5, 2026, 11:59 PM ET.
+
+The instructor repository also contains future modules.
+Their presence does not mean they have been released to students.
