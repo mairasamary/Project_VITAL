@@ -56,7 +56,17 @@ def main():
     if orphan_vp: problems.append(f"vitals with unknown subject: {orphan_vp}")
     if orphan_ve: problems.append(f"vitals with unknown encounter: {orphan_ve}")
 
-    classes = Counter(tuple(r[q] for q in QIS) for r in p)
+    patient_columns = headers(d/"patients.csv")
+    if all(q in patient_columns for q in QIS):
+        qis = QIS
+    elif all(q in patient_columns for q in ("age_band", "geography")):
+        qis = ("age_band", "geography")
+    else:
+        print("\nPRIVACY VALIDATION FAILED")
+        print(" - unsupported quasi-identifier schema")
+        return 1
+
+    classes = Counter(tuple(r[q] for q in qis) for r in p)
     min_k = min(classes.values()) if classes else 0
     unique = sum(n for n in classes.values() if n == 1)
     below = sum(n for n in classes.values() if n < args.min_k)
@@ -67,7 +77,7 @@ def main():
     print(f"Orphan encounters:        {orphan_e}")
     print(f"Unknown-subject vitals:   {orphan_vp}")
     print(f"Unknown-encounter vitals: {orphan_ve}")
-    print(f"Quasi-identifiers:        {', '.join(QIS)}")
+    print(f"Quasi-identifiers:        {', '.join(qis)}")
     print(f"Minimum equivalence k:    {min_k}")
     print(f"Records with k=1:         {unique}")
     print(f"Records with k<{args.min_k}:        {below}")
