@@ -63,7 +63,11 @@ def main():
     ap.add_argument("--suppress-sex", action="store_true")
     args = ap.parse_args()
 
-    src, out = Path(args.source), Path(args.output)
+    src, out = Path(args.source).resolve(), Path(args.output).resolve()
+    # Disallow both source-as-output and ancestor/descendant overlap.
+    # Otherwise deleting the output could destroy the input CSVs.
+    if src == out or src in out.parents or out in src.parents:
+        ap.error("source and output directories must not overlap")
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)

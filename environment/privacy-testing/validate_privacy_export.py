@@ -41,9 +41,17 @@ def main():
     p, e, v = rows(d/"patients.csv"), rows(d/"encounters.csv"), rows(d/"vitals.csv")
     pids = {r["subject_id"] for r in p}
     eids = {r["encounter_id"] for r in e}
+    encounter_subject = {r["encounter_id"]: r["subject_id"] for r in e}
     orphan_e = sum(r["subject_id"] not in pids for r in e)
     orphan_vp = sum(r["subject_id"] not in pids for r in v)
     orphan_ve = sum(r["encounter_id"] not in eids for r in v)
+    cross_patient_vitals = sum(
+        r["encounter_id"] in encounter_subject
+        and r["subject_id"] != encounter_subject[r["encounter_id"]]
+        for r in v
+    )
+    if cross_patient_vitals:
+        problems.append(f"vitals subject-encounter mismatches: {cross_patient_vitals}")
     if orphan_e: problems.append(f"orphan encounters: {orphan_e}")
     if orphan_vp: problems.append(f"vitals with unknown subject: {orphan_vp}")
     if orphan_ve: problems.append(f"vitals with unknown encounter: {orphan_ve}")

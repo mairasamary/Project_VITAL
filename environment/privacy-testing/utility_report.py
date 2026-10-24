@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-import argparse, csv, json
+import argparse, csv, json, sys
 from collections import Counter
 from pathlib import Path
 
 def read(path):
     with path.open(newline="",encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+def fields(path):
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        return reader.fieldnames or []
 
 def main():
     ap=argparse.ArgumentParser()
@@ -34,8 +39,10 @@ def main():
     for k,v in checks.items():
         print(f"{k}: {'YES' if v else 'NO'}")
     print()
-    print("Available patient analytical fields:", ", ".join(ep[0].keys()))
-    print("Available encounter analytical fields:", ", ".join(ee[0].keys()))
-    print("Available vitals analytical fields:", ", ".join(ev[0].keys()))
+    print("Available patient analytical fields:", ", ".join(fields(e/"patients.csv")))
+    print("Available encounter analytical fields:", ", ".join(fields(e/"encounters.csv")))
+    print("Available vitals analytical fields:", ", ".join(fields(e/"vitals.csv")))
+    return 0 if all(checks.values()) else 1
+
 if __name__=="__main__":
-    main()
+    sys.exit(main())

@@ -43,7 +43,11 @@ def main():
                     help="local experiment secret; never commit a real re-identification key")
     args = ap.parse_args()
 
-    src, out = Path(args.source), Path(args.output)
+    src, out = Path(args.source).resolve(), Path(args.output).resolve()
+    # Disallow both source-as-output and ancestor/descendant overlap.
+    # Otherwise deleting the output could destroy the input CSVs.
+    if src == out or src in out.parents or out in src.parents:
+        ap.error("source and output directories must not overlap")
     required = ["patients.csv","encounters.csv","vitals.csv","manifest.json"]
     missing = [x for x in required if not (src/x).exists()]
     if missing:

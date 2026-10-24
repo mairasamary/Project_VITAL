@@ -18,7 +18,7 @@ def iso_dt(d):
     return d.strftime("%Y-%m-%d %H:%M:%S")
 
 def dob(rng):
-    today = date.today()
+    today = date(2026, 1, 1)  # Fixed reference for reproducible synthetic DOBs.
     age_days = rng.randint(18*365, 90*365)
     d = today - timedelta(days=age_days)
     return d.isoformat()

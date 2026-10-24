@@ -21,6 +21,10 @@ def main():
     ap.add_argument("--qi",nargs="*",default=[])
     ap.add_argument("--min-k",type=int,default=1)
     args=ap.parse_args()
+    if args.min_k > 1 and not args.qi:
+        ap.error("--min-k greater than 1 requires at least one --qi field")
+    if args.min_k < 1:
+        ap.error("--min-k must be at least 1")
     d=Path(args.dataset)
     problems=[]
 
@@ -30,9 +34,17 @@ def main():
 
     p,e,v=read(d/"patients.csv"),read(d/"encounters.csv"),read(d/"vitals.csv")
     pids={r["subject_id"] for r in p}; eids={r["encounter_id"] for r in e}
+    encounter_subject = {r["encounter_id"]: r["subject_id"] for r in e}
     oe=sum(r["subject_id"] not in pids for r in e)
     ovp=sum(r["subject_id"] not in pids for r in v)
     ove=sum(r["encounter_id"] not in eids for r in v)
+    cross_patient_vitals = sum(
+        r["encounter_id"] in encounter_subject
+        and r["subject_id"] != encounter_subject[r["encounter_id"]]
+        for r in v
+    )
+    if cross_patient_vitals:
+        problems.append(f"vitals subject-encounter mismatches: {cross_patient_vitals}")
     if oe: problems.append(f"orphan encounters: {oe}")
     if ovp: problems.append(f"vitals with unknown subject: {ovp}")
     if ove: problems.append(f"vitals with unknown encounter: {ove}")
@@ -45,7 +57,8 @@ def main():
     print("Unknown-encounter vitals:",ove)
 
     if args.qi:
-        missing=[x for x in args.qi if x not in p[0]]
+        patient_columns = header(d/"patients.csv")
+        missing=[x for x in args.qi if x not in patient_columns]
         if missing:
             problems.append("missing quasi-identifiers: "+", ".join(missing))
         else:
