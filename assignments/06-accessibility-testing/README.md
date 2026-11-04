@@ -1,5 +1,8 @@
 # Assignment 6 — Accessibility Testing and Continuous Accessibility Validation
 
+**Fall 2026 course deadline:** Tuesday, November 17, 2026, at 11:59 PM ET.  
+**Assessment:** 100 points. The [Fall 2026 course assignment specification](https://github.com/CSCI3364-Fall2026/Project_VITAL/blob/main/assignments/06-accessibility-testing/README.md) is authoritative for students in that offering. This model assignment also documents an extended Docker-based teaching implementation.
+
 ## Project VITAL
 
 Modern software quality includes more than functional correctness. An interface may technically work while still creating barriers for users who navigate with a keyboard, use assistive technology, require magnification, or perceive content differently.
@@ -12,6 +15,24 @@ You will work in two complementary contexts:
 2. **A controlled Project VITAL accessibility fixture** — demonstrate that continuous integration can detect an accessibility regression.
 
 The goal is not to claim that OpenEMR is fully accessible or inaccessible. Your goal is to collect evidence, interpret that evidence carefully, and understand what different accessibility-testing techniques can and cannot establish.
+
+---
+
+## Assessment alignment (Fall 2026: 100 points)
+
+| Criterion | Points |
+|---|---:|
+| Accessibility plan and WCAG 2.2/POUR mapping (at least eight checks) | 15 |
+| Manual keyboard, focus, forms, errors, and 200% zoom testing (at least six observations, including two error/dynamic states) | 20 |
+| Automated scan, interpretation, and manual follow-up (at least three checks) | 15 |
+| Evidence-based findings (at least three, with priority and recommendations) | 15 |
+| Automated accessibility regression tests (at least two, including one against a local OpenEMR screen or rendered DOM) | 15 |
+| Documented CI GREEN → RED → GREEN experiment | 10 |
+| Reflection and limitations | 5 |
+| Reproducibility and communication | 5 |
+| **Total** | **100** |
+
+The Docker scripts and sample fixtures below are teaching infrastructure, **not substitutes for independently collected OpenEMR evidence or team-written tests**. A passing fixture CI run does not establish that OpenEMR is accessible or WCAG conformant.
 
 ---
 
@@ -371,6 +392,8 @@ Explain why a sighted mouse user might still understand the control even though 
 
 Commit and push the experiment so that GitHub Actions records the failing accessibility workflow.
 
+**Temporary-regression policy:** Intentionally broken accessibility markup is permitted **only in a team-owned synthetic teaching fixture** for this controlled GREEN → RED → GREEN experiment. Do not introduce intentional regressions into OpenEMR, and never commit real patient data, credentials, or secrets. Restore the fixture in a subsequent commit, verify a passing GitHub Actions run, and ensure the **final `assignment-06` tag points to the restored, accessible version**.
+
 Capture evidence of the **RED** run.
 
 ---
@@ -460,7 +483,9 @@ Submit a Markdown or PDF report containing:
 2. the requested tables and observations;
 3. screenshots/evidence;
 4. your accessibility-testing strategy;
-5. the relevant branch/commit identifiers for the GREEN → RED → GREEN experiment.
+5. the relevant branch/commit identifiers and GitHub Actions run links for the GREEN → RED → GREEN experiment.
+
+For **CSCI3364 Fall 2026**, submit the work in the team's `assignment-06/` directory using these report files: `README.md`, `accessibility-plan.md`, `manual-test-report.md`, `automated-scan-report.md`, `accessibility-defects.md`, `automation.md`, `ci-report.md`, and `reflection.md`, with supporting tests and sanitized evidence. Push the final `assignment-06` tag only after restoring the fixture and confirming GREEN. Teams must also include at least one independently implemented automated check against their actual local OpenEMR screen or rendered DOM, beyond the starter fixture workflow.
 
 Keep screenshots focused on evidence. Do not submit dozens of screenshots when one clearly labeled screenshot establishes the result.
 
